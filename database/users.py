@@ -10,7 +10,7 @@ from typing import Optional, List
 from sqlalchemy import BigInteger, Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database.base import Base, TimestampMixin
+from .base import Base, TimestampMixin
 
 
 class UserRole(str, enum.Enum):
