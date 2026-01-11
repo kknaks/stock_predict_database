@@ -5,9 +5,10 @@ User & Account 모델
 """
 
 import enum
+from datetime import datetime
 from typing import Optional, List
 
-from sqlalchemy import BigInteger, Enum, ForeignKey, Numeric, String, Text
+from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
@@ -31,11 +32,15 @@ class Users(Base, TimestampMixin):
         autoincrement=True,
     )
     
-    # 사용자 정보
+    # 로그인 정보
     nickname: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
         unique=True,
+    )
+    password_hash: Mapped[str] = mapped_column(
+        String(64),  # SHA-256 = 64자 hex
+        nullable=False,
     )
     
     # 역할 (RBAC)
@@ -109,11 +114,30 @@ class Accounts(Base, TimestampMixin):
         nullable=False,
     )
     
+    # 한국투자증권 Access Token (캐싱)
+    kis_access_token: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    
+    kis_token_expired_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    
     # 관계: 계좌 → 유저
     user: Mapped["Users"] = relationship(
         "Users",
         back_populates="accounts",
     )
+    
+    def is_token_valid(self) -> bool:
+        """토큰이 유효한지 확인 (만료 5분 전까지 유효)"""
+        if not self.kis_access_token or not self.kis_token_expired_at:
+            return False
+        from datetime import timedelta, timezone
+        now = datetime.now(timezone.utc)
+        return self.kis_token_expired_at > now + timedelta(minutes=5)
     
     def __repr__(self) -> str:
         return f"<Account(id={self.id}, account_number='{self.account_number}')>"
