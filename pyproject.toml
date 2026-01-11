@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "stock-predict-database"
+version = "0.1.0"
+description = "Stock Predict Database - PostgreSQL async database layer with Alembic migrations"
+authors = ["kknakss <kknaks@stoa-investment.com>"]
+packages = [
+    { include = "database" },
+    { include = "models" },
+    { include = "kafka" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.15"
+
+# Database
+sqlalchemy = "^2.0.36"
+asyncpg = "^0.30.0"
+psycopg2-binary = "^2.9.10"
+
+# Migrations
+alembic = "^1.14.0"
+
+# Settings
+pydantic-settings = "^2.7.0"
+python-dotenv = "^1.2.1"
+
+# Kafka (optional, for event-driven)
+aiokafka = "^0.12.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+pytest-asyncio = "^0.24.0"
+black = "^24.0.0"
+flake8 = "^7.0.0"
+mypy = "^1.10.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]

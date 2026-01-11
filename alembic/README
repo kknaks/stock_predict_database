@@ -1,0 +1,78 @@
+# Alembic 마이그레이션 가이드
+
+## 📋 기본 명령어
+
+### 1. 마이그레이션 생성
+```bash
+# 모델 변경사항 자동 감지해서 생성
+poetry run alembic revision --autogenerate -m "설명"
+
+# 빈 마이그레이션 수동 생성
+poetry run alembic revision -m "설명"
+```
+
+### 2. 마이그레이션 적용 (Upgrade)
+```bash
+# 최신 버전으로 업그레이드
+poetry run alembic upgrade head
+
+# 한 단계 업그레이드
+poetry run alembic upgrade +1
+
+# 특정 버전으로 업그레이드
+poetry run alembic upgrade <revision_id>
+```
+
+### 3. 마이그레이션 롤백 (Downgrade)
+```bash
+# 한 단계 롤백
+poetry run alembic downgrade -1
+
+# 처음으로 롤백 (모든 테이블 삭제)
+poetry run alembic downgrade base
+
+# 특정 버전으로 롤백
+poetry run alembic downgrade <revision_id>
+```
+
+### 4. 현재 상태 확인
+```bash
+# 현재 적용된 버전 확인
+poetry run alembic current
+
+# 마이그레이션 히스토리 보기
+poetry run alembic history
+
+# 자세한 히스토리
+poetry run alembic history --verbose
+```
+
+### 5. SQL 미리보기 (실제 적용 X)
+```bash
+# 업그레이드 SQL 확인
+poetry run alembic upgrade head --sql
+
+# 다운그레이드 SQL 확인
+poetry run alembic downgrade -1 --sql
+```
+
+---
+
+## ⚠️ 주의사항
+
+1. **운영 DB 작업 전** 반드시 백업
+2. **autogenerate는 완벽하지 않음** - 생성된 파일 검토 필수
+3. **롤백 테스트** - 운영 적용 전 downgrade 테스트 권장
+
+---
+
+## 📁 파일 구조
+
+```
+alembic/
+├── env.py              ← 환경 설정 (DB 연결)
+├── script.py.mako      ← 마이그레이션 템플릿
+├── README              ← 이 파일
+└── versions/           ← 마이그레이션 파일들
+    └── xxxx_description.py
+```
