@@ -4,12 +4,19 @@ User & Account 모델
 사용자 정보 및 주식 계좌 관리
 """
 
+import enum
 from typing import Optional, List
 
-from sqlalchemy import BigInteger, ForeignKey, Numeric, String, Text
+from sqlalchemy import BigInteger, Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.base import Base, TimestampMixin
+
+
+class UserRole(str, enum.Enum):
+    """사용자 역할"""
+    MASTER = "master"  # 관리자: 모든 권한
+    USER = "user"      # 일반 사용자: 제한된 권한
 
 
 class Users(Base, TimestampMixin):
@@ -29,6 +36,13 @@ class Users(Base, TimestampMixin):
         String(50),
         nullable=False,
         unique=True,
+    )
+    
+    # 역할 (RBAC)
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole),
+        nullable=False,
+        default=UserRole.USER,
     )
     
     # JWT 토큰
