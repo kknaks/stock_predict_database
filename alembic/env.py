@@ -33,7 +33,8 @@ if config.config_file_name is not None:
 # ⭐ 모델의 Base.metadata 연결 (autogenerate용)
 # 모델 파일들을 import하면 Base.metadata에 자동 등록됨
 from database.base import Base
-from database.users import Users, Accounts  # 모델 추가 시 여기에 import
+from database.users import Users
+from database.stocks import StockMetadata, StockPrices, MarketIndices
 
 target_metadata = Base.metadata
 
