@@ -11,8 +11,8 @@ import enum
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import BigInteger, Date, Enum, Index, Numeric, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import BigInteger, Date, Enum, Float, ForeignKey, Index, Numeric, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
 
@@ -28,6 +28,7 @@ class StockStatus(str, enum.Enum):
     ACTIVE = "ACTIVE"           # 정상 거래
     DELISTED = "DELISTED"       # 상장폐지
     SUSPENDED = "SUSPENDED"     # 거래정지
+    WARNING = "WARNING"         # 관리종목
 
 
 class StockMetadata(Base, TimestampMixin):
@@ -85,6 +86,13 @@ class StockMetadata(Base, TimestampMixin):
         nullable=True,
     )
 
+    # Relationship: 1:N (StockMetadata : StockPrices)
+    prices: Mapped[list["StockPrices"]] = relationship(
+        "StockPrices",
+        back_populates="stock",
+        cascade="all, delete-orphan",
+    )
+
     def __repr__(self) -> str:
         return f"<StockMetadata(symbol='{self.symbol}', name='{self.name}')>"
 
@@ -109,6 +117,7 @@ class StockPrices(Base, TimestampMixin):
     # 종목 코드 + 날짜 (Unique)
     symbol: Mapped[str] = mapped_column(
         String(20),
+        ForeignKey("stock_metadata.symbol", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -117,26 +126,32 @@ class StockPrices(Base, TimestampMixin):
         nullable=False,
     )
 
+    # Relationship: N:1 (StockPrices : StockMetadata)
+    stock: Mapped["StockMetadata"] = relationship(
+        "StockMetadata",
+        back_populates="prices",
+    )
+
     # =====================================================
     # OHLCV (원본 데이터)
     # =====================================================
     open: Mapped[float] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=False,
     )
 
     high: Mapped[float] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=False,
     )
 
     low: Mapped[float] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=False,
     )
 
     close: Mapped[float] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=False,
     )
 
@@ -151,43 +166,37 @@ class StockPrices(Base, TimestampMixin):
 
     # 전일 종가 (gap 계산용)
     prev_close: Mapped[Optional[float]] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=True,
     )
 
     # 갭 비율 (%)
     gap_pct: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
     # 전일 수익률 (%)
     prev_return: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
     # 전일 고저가 범위 (%)
     prev_range_pct: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
     # 전일 윗꼬리
     prev_upper_shadow: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 6),
         nullable=True,
     )
 
     # 전일 아래꼬리
     prev_lower_shadow: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 6),
         nullable=True,
     )
 
     # 거래량 비율 (전일 / 20일 평균)
     volume_ratio: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
@@ -197,91 +206,85 @@ class StockPrices(Base, TimestampMixin):
 
     # RSI 14일
     rsi_14: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
     # ATR 14일
     atr_14: Mapped[Optional[float]] = mapped_column(
-        Numeric(15, 4),
         nullable=True,
     )
 
     # ATR 비율 (갭 크기 / ATR)
     atr_ratio: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
     # 볼린저밴드 위치 (0~1)
     bollinger_position: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 6),
         nullable=True,
     )
 
     # 볼린저밴드 (참고용)
     bollinger_upper: Mapped[Optional[float]] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=True,
     )
 
     bollinger_middle: Mapped[Optional[float]] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=True,
     )
 
     bollinger_lower: Mapped[Optional[float]] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=True,
     )
 
     # 이동평균선
     ma_5: Mapped[Optional[float]] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=True,
     )
 
     ma_20: Mapped[Optional[float]] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=True,
     )
 
     ma_50: Mapped[Optional[float]] = mapped_column(
-        Numeric(15, 2),
+        Float,
         nullable=True,
     )
 
     # 이동평균선 위/아래 (0 or 1)
-    above_ma5: Mapped[Optional[int]] = mapped_column(
+    above_ma5: Mapped[Optional[float]] = mapped_column(
         nullable=True,
     )
 
-    above_ma20: Mapped[Optional[int]] = mapped_column(
+    above_ma20: Mapped[Optional[float]] = mapped_column(
         nullable=True,
     )
 
-    above_ma50: Mapped[Optional[int]] = mapped_column(
+    above_ma50: Mapped[Optional[float]] = mapped_column(
         nullable=True,
     )
 
     # 골든크로스/데드크로스 (0 or 1)
-    ma5_ma20_cross: Mapped[Optional[int]] = mapped_column(
+    ma5_ma20_cross: Mapped[Optional[float]] = mapped_column(
         nullable=True,
     )
 
     # 수익률 (%)
     return_5d: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
     return_20d: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
     # 연속 상승일
-    consecutive_up_days: Mapped[Optional[int]] = mapped_column(
+    consecutive_up_days: Mapped[Optional[float]] = mapped_column(
         nullable=True,
     )
 
@@ -291,7 +294,6 @@ class StockPrices(Base, TimestampMixin):
 
     # 시장 대비 갭 차이 (종목 갭 - KOSPI/KOSDAQ 갭) ⭐ Feature Importance 1위!
     market_gap_diff: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
@@ -330,22 +332,22 @@ class MarketIndices(Base, TimestampMixin):
     # KOSPI
     # =====================================================
     kospi_open: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
         nullable=True,
     )
 
     kospi_high: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
         nullable=True,
     )
 
     kospi_low: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
         nullable=True,
     )
 
     kospi_close: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
         nullable=True,
     )
 
@@ -356,7 +358,6 @@ class MarketIndices(Base, TimestampMixin):
 
     # KOSPI 갭 (%) - 미리 계산
     kospi_gap_pct: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
@@ -364,22 +365,22 @@ class MarketIndices(Base, TimestampMixin):
     # KOSDAQ
     # =====================================================
     kosdaq_open: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
         nullable=True,
     )
 
     kosdaq_high: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
         nullable=True,
     )
 
     kosdaq_low: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
         nullable=True,
     )
 
     kosdaq_close: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
         nullable=True,
     )
 
@@ -390,7 +391,6 @@ class MarketIndices(Base, TimestampMixin):
 
     # KOSDAQ 갭 (%) - 미리 계산
     kosdaq_gap_pct: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
@@ -398,17 +398,31 @@ class MarketIndices(Base, TimestampMixin):
     # KOSPI200 (선택)
     # =====================================================
     kospi200_open: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
+        nullable=True,
+    )
+
+    kospi200_high: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    kospi200_low: Mapped[Optional[float]] = mapped_column(
+        Float,
         nullable=True,
     )
 
     kospi200_close: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 2),
+        Float,
+        nullable=True,
+    )
+
+    kospi200_volume: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
         nullable=True,
     )
 
     kospi200_gap_pct: Mapped[Optional[float]] = mapped_column(
-        Numeric(10, 4),
         nullable=True,
     )
 
