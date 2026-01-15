@@ -52,12 +52,6 @@ class UserStrategy(Base, TimestampMixin):
         nullable=False,
     )
 
-    strategy_id: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("strategy_info.id"),
-        nullable=False,
-    )
-
     ls_ratio: Mapped[float] = mapped_column(
         Float,
         nullable=False,
@@ -91,4 +85,147 @@ class UserStrategy(Base, TimestampMixin):
     user: Mapped["Users"] = relationship(
         "Users",
         back_populates="user_strategy",
+    )
+
+    # Relationship: 1:N (UserStrategy : DailyStrategy)
+    daily_strategies: Mapped[List["DailyStrategy"]] = relationship(
+        "DailyStrategy",
+        back_populates="user_strategy",
+        cascade="all, delete-orphan",
+    )
+
+
+class DailyStrategy(Base, TimestampMixin):
+    __tablename__ = "daily_strategy"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    user_strategy_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("user_strategy.id"),
+        nullable=False,
+    )
+
+    buy_amount: Mapped[float] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    sell_amount: Mapped[float] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    total_profit_rate: Mapped[float] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    total_profit_amount: Mapped[float] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    # Relationship: N:1 (DailyStrategy : UserStrategy)
+    user_strategy: Mapped["UserStrategy"] = relationship(
+        "UserStrategy",
+        back_populates="daily_strategies",
+    )
+
+    # Relationship: 1:N (DailyStrategy : DailyStrategyStock)
+    stocks: Mapped[List["DailyStrategyStock"]] = relationship(
+        "DailyStrategyStock",
+        back_populates="daily_strategy",
+        cascade="all, delete-orphan",
+    )
+
+class DailyStrategyStock(Base, TimestampMixin):
+    __tablename__ = "daily_strategy_stock"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    daily_strategy_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("daily_strategy.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    stock_code: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+    )
+
+    stock_name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    exchange: Mapped[Optional[str]] = mapped_column(
+        String(20),
+        nullable=True,
+    )
+
+    stock_open: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    target_price: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    sell_price: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    stop_loss_price: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # 실제 거래 정보 (장 마감 후 업데이트)
+    buy_price: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    buy_quantity: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    sell_price: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    sell_quantity: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    profit_rate: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # Relationship: N:1 (DailyStrategyStock : DailyStrategy)
+    daily_strategy: Mapped["DailyStrategy"] = relationship(
+        "DailyStrategy",
+        back_populates="stocks",
     )
