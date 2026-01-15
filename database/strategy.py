@@ -52,6 +52,12 @@ class UserStrategy(Base, TimestampMixin):
         nullable=False,
     )
 
+    strategy_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("strategy_info.id"),
+        nullable=False,
+    )
+
     ls_ratio: Mapped[float] = mapped_column(
         Float,
         nullable=False,
