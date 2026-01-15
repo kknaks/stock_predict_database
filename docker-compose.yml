@@ -1,4 +1,4 @@
-name: stock-predictor
+name: stock-predictor-data
 
 services:
   stock-predict-db:

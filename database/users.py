@@ -12,13 +12,13 @@ from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Numeric, String, 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
-
+from .strategy import UserStrategy
 
 class UserRole(str, enum.Enum):
     """사용자 역할"""
     MASTER = "master"  # 관리자: 모든 권한
     USER = "user"      # 일반 사용자: 제한된 권한
-
+    MOCK = "mock"      # 모의 사용자: 모의 거래
 
 class Users(Base, TimestampMixin):
     """사용자 테이블"""
@@ -63,6 +63,12 @@ class Users(Base, TimestampMixin):
     # 관계: 유저 1명 → 계좌 여러개
     accounts: Mapped[List["Accounts"]] = relationship(
         "Accounts",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    user_strategy: Mapped[List["UserStrategy"]] = relationship(
+        "UserStrategy",
         back_populates="user",
         cascade="all, delete-orphan",
     )

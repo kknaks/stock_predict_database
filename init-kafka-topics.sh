@@ -12,10 +12,10 @@ rpk topic create extract_daily_candidate \
   --replicas 3
 
 # 필요한 다른 토픽들을 여기에 추가
-# rpk topic create another_topic \
-#   --brokers redpanda-0:9092 \
-#   --partitions 3 \
-#   --replicas 3
+rpk topic create kis_websocket_commands \
+  --brokers redpanda-0:9092 \
+  --partitions 3 \
+  --replicas 3
 
 echo "Topics created successfully!"
 echo "Current topics:"

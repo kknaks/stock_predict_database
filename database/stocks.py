@@ -488,11 +488,11 @@ class GapPredictions(Base, TimestampMixin):
         nullable=False,
     )
 
-    # # 거래소 (KOSPI/KOSDAQ)
-    # exchange: Mapped[Exchange] = mapped_column(
-    #     Enum(Exchange),
-    #     nullable=False,
-    # )
+    # 거래소 (KOSPI/KOSDAQ)
+    exchange: Mapped[Exchange] = mapped_column(
+        Enum(Exchange, create_type=False),
+        nullable=True,
+    )
 
     # 예측 대상 날짜
     prediction_date: Mapped[date] = mapped_column(
