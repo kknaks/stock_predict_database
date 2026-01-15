@@ -2,10 +2,15 @@ import enum
 from datetime import datetime
 from typing import Optional, List
 
-from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Float, String, Text
+from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Float, String, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+class StrategyStatus(str, enum.Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    PAUSED = "paused"
 
 class StrategyInfo(Base, TimestampMixin):
     __tablename__ = "strategy_info"
@@ -65,7 +70,19 @@ class UserStrategy(Base, TimestampMixin):
         nullable=False,
         default=0.0,
     )
-    
+
+    is_auto: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=True,
+        default=False,
+    )    
+
+    status: Mapped[StrategyStatus] = mapped_column(
+        Enum(StrategyStatus),
+        nullable=True,
+        default=StrategyStatus.ACTIVE,
+    )
+
     strategy_info: Mapped["StrategyInfo"] = relationship(
         "StrategyInfo",
         back_populates="user_strategy",
