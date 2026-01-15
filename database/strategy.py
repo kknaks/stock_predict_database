@@ -31,10 +31,9 @@ class StrategyInfo(Base, TimestampMixin):
         nullable=True,
     )
 
-    user_strategy: Mapped["UserStrategy"] = relationship(
+    user_strategies: Mapped[List["UserStrategy"]] = relationship(
         "UserStrategy",
         back_populates="strategy_info",
-        uselist=False,
     )
 
 
