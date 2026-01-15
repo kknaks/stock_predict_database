@@ -84,7 +84,7 @@ class UserStrategy(Base, TimestampMixin):
 
     strategy_info: Mapped["StrategyInfo"] = relationship(
         "StrategyInfo",
-        back_populates="user_strategy",
+        back_populates="user_strategies",
         uselist=False,
     )
 
