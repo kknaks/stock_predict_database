@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from typing import Optional, List
 
-from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Float, String, Text, Boolean
+from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Float, String, Text, Boolean, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
@@ -239,6 +239,11 @@ class DailyStrategyStock(Base, TimestampMixin):
 
     target_price: Mapped[Optional[float]] = mapped_column(
         Float,
+        nullable=True,
+    )
+
+    target_quantity: Mapped[Optional[float]] = mapped_column(
+        Integer,
         nullable=True,
     )
 
