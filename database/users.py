@@ -95,6 +95,12 @@ class Accounts(Base, TimestampMixin):
         ForeignKey("users.uid", ondelete="CASCADE"),
         nullable=False,
     )
+
+    hts_id: Mapped[str] = mapped_column(
+        String(50),
+        nullable=True,
+        unique=True,
+    )
     
     # 계좌 정보
     account_number: Mapped[str] = mapped_column(
