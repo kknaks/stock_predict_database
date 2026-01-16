@@ -12,6 +12,12 @@ class StrategyStatus(str, enum.Enum):
     INACTIVE = "inactive"
     PAUSED = "paused"
 
+class WeightType(str, enum.Enum):
+    EQUAL = "equal"
+    MARKETCAP = "marketcap"
+    VOLUME = "volume"
+    PRICE = "price"
+
 class StrategyInfo(Base, TimestampMixin):
     __tablename__ = "strategy_info"
 
@@ -36,6 +42,30 @@ class StrategyInfo(Base, TimestampMixin):
         back_populates="strategy_info",
     )
 
+class StrategyWeightType(Base, TimestampMixin):
+    __tablename__ = "strategy_weight"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    weight_type: Mapped[WeightType] = mapped_column(
+        Enum(WeightType),
+        nullable=False,
+    )
+
+    description: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    # Relationship: 1:N (StrategyWeightType : UserStrategy)
+    user_strategies: Mapped[List["UserStrategy"]] = relationship(
+        "UserStrategy",
+        back_populates="strategy_weight_type",
+    )
 
 class UserStrategy(Base, TimestampMixin):
     __tablename__ = "user_strategy"
@@ -58,6 +88,12 @@ class UserStrategy(Base, TimestampMixin):
         nullable=False,
     )
 
+    investment_weight: Mapped[float] = mapped_column(
+        Float,
+        nullable=True,
+        default=0.9,
+    )
+
     ls_ratio: Mapped[float] = mapped_column(
         Float,
         nullable=False,
@@ -74,7 +110,13 @@ class UserStrategy(Base, TimestampMixin):
         Boolean,
         nullable=True,
         default=False,
-    )    
+    )
+
+    weight_type_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        ForeignKey("strategy_weight.id"),
+        nullable=True,
+    )
 
     status: Mapped[StrategyStatus] = mapped_column(
         Enum(StrategyStatus),
@@ -91,6 +133,12 @@ class UserStrategy(Base, TimestampMixin):
     user: Mapped["Users"] = relationship(
         "Users",
         back_populates="user_strategy",
+    )
+
+    strategy_weight_type: Mapped[Optional["StrategyWeightType"]] = relationship(
+        "StrategyWeightType",
+        back_populates="user_strategies",
+        uselist=False,
     )
 
     # Relationship: 1:N (UserStrategy : DailyStrategy)
