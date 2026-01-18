@@ -288,3 +288,201 @@ class DailyStrategyStock(Base, TimestampMixin):
         "DailyStrategy",
         back_populates="stocks",
     )
+
+    # Relationship: 1:N (DailyStrategyStock : Order)
+    orders: Mapped[List["Order"]] = relationship(
+        "Order",
+        back_populates="daily_strategy_stock",
+        cascade="all, delete-orphan",
+    )
+
+
+class OrderStatus(str, enum.Enum):
+    """주문 상태"""
+    ORDERED = "ordered"  # 주문 접수
+    PARTIALLY_EXECUTED = "partially_executed"  # 부분 체결
+    EXECUTED = "executed"  # 전량 체결
+    CANCELLED = "cancelled"  # 취소
+    REJECTED = "rejected"  # 거부
+
+
+class OrderType(str, enum.Enum):
+    """주문 유형"""
+    BUY = "BUY"
+    SELL = "SELL"
+
+
+class Order(Base, TimestampMixin):
+    """주문 내역 테이블"""
+    
+    __tablename__ = "order"
+    
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+    )
+    
+    daily_strategy_stock_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("daily_strategy_stock.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    
+    order_no: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        unique=True,
+        index=True,  # 주문번호로 빠른 조회
+    )
+    
+    order_type: Mapped[OrderType] = mapped_column(
+        Enum(OrderType),
+        nullable=False,
+    )
+    
+    order_quantity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    
+    order_price: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+    
+    order_dvsn: Mapped[str] = mapped_column(
+        String(10),  # 00: 지정가, 01: 시장가 등
+        nullable=False,
+    )
+    
+    account_no: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+    
+    is_mock: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+    
+    status: Mapped[OrderStatus] = mapped_column(
+        Enum(OrderStatus),
+        nullable=False,
+        default=OrderStatus.ORDERED,
+    )
+    
+    # 누적 체결 정보 (최신 상태)
+    total_executed_quantity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+    
+    total_executed_price: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+        default=0.0,
+    )
+    
+    remaining_quantity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    
+    is_fully_executed: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+    
+    # 주문 시각
+    ordered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    
+    # Relationship: N:1 (Order : DailyStrategyStock)
+    daily_strategy_stock: Mapped["DailyStrategyStock"] = relationship(
+        "DailyStrategyStock",
+        back_populates="orders",
+    )
+    
+    # Relationship: 1:N (Order : OrderExecution)
+    executions: Mapped[List["OrderExecution"]] = relationship(
+        "OrderExecution",
+        back_populates="order",
+        cascade="all, delete-orphan",
+        order_by="OrderExecution.execution_sequence",
+    )
+
+
+class OrderExecution(Base, TimestampMixin):
+    """체결통보 내역 테이블 (건별)"""
+    
+    __tablename__ = "order_execution"
+    
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+    )
+    
+    order_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("order.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    
+    # 체결 순서 (같은 주문 내에서 체결 순서)
+    execution_sequence: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    
+    # 이번 체결 정보
+    executed_quantity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    
+    executed_price: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+    
+    # 체결 시점의 누적 정보
+    total_executed_quantity_after: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    
+    total_executed_price_after: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+    
+    remaining_quantity_after: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    
+    is_fully_executed_after: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+    
+    # 체결 시각
+    executed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    
+    # Relationship: N:1 (OrderExecution : Order)
+    order: Mapped["Order"] = relationship(
+        "Order",
+        back_populates="executions",
+    )
