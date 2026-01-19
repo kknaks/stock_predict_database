@@ -5,8 +5,6 @@ description = "Stock Predict Database - PostgreSQL async database layer with Ale
 authors = ["kknakss <kknaks@stoa-investment.com>"]
 packages = [
     { include = "database" },
-    { include = "models" },
-    { include = "kafka" },
 ]
 
 [tool.poetry.dependencies]
