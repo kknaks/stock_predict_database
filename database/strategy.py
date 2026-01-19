@@ -1,11 +1,12 @@
 import enum
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List
 
-from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Float, String, Text, Boolean, Integer
+from sqlalchemy import BigInteger, DateTime, Date, Enum, ForeignKey, Float, String, Text, Boolean, Integer, UniqueConstraint, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+from .stocks import Exchange
 
 class StrategyStatus(str, enum.Enum):
     ACTIVE = "active"
@@ -17,6 +18,33 @@ class WeightType(str, enum.Enum):
     MARKETCAP = "marketcap"
     VOLUME = "volume"
     PRICE = "price"
+
+class SignalType(str, enum.Enum):
+    """매매 신호"""
+    BUY = "BUY"
+    HOLD = "HOLD"
+    SELL = "SELL"
+
+class ConfidenceLevel(str, enum.Enum):
+    """신뢰도"""
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+
+
+class OrderStatus(str, enum.Enum):
+    """주문 상태"""
+    ORDERED = "ordered"  # 주문 접수
+    PARTIALLY_EXECUTED = "partially_executed"  # 부분 체결
+    EXECUTED = "executed"  # 전량 체결
+    CANCELLED = "cancelled"  # 취소
+    REJECTED = "rejected"  # 거부
+
+
+class OrderType(str, enum.Enum):
+    """주문 유형"""
+    BUY = "BUY"
+    SELL = "SELL"
 
 class StrategyInfo(Base, TimestampMixin):
     __tablename__ = "strategy_info"
@@ -40,6 +68,13 @@ class StrategyInfo(Base, TimestampMixin):
     user_strategies: Mapped[List["UserStrategy"]] = relationship(
         "UserStrategy",
         back_populates="strategy_info",
+    )
+
+    # Relationship: 1:N (StrategyInfo : GapPredictions)
+    gap_predictions: Mapped[List["GapPredictions"]] = relationship(
+        "GapPredictions",
+        back_populates="strategy_info",
+        cascade="all, delete-orphan",
     )
 
 class StrategyWeightType(Base, TimestampMixin):
@@ -66,6 +101,232 @@ class StrategyWeightType(Base, TimestampMixin):
         "UserStrategy",
         back_populates="strategy_weight_type",
     )
+
+class GapPredictions(Base, TimestampMixin):
+    """
+    갭 예측 결과 테이블
+
+    AI 서버에서 예측한 결과를 저장
+    PredictionResultMessage 스키마 기반
+    """
+
+    __tablename__ = "predictions"
+
+    # Primary Key - Auto Increment
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    # =====================================================
+    # 원본 정보
+    # =====================================================
+    # 예측 시각
+    timestamp: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+    )
+
+    # 종목 코드
+    stock_code: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+    )
+
+    # 종목명
+    stock_name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    # 거래소 (KOSPI/KOSDAQ)
+    exchange: Mapped[Exchange] = mapped_column(
+        Enum(Exchange, create_type=False),
+        nullable=True,
+    )
+
+    # 예측 대상 날짜
+    prediction_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+    )
+
+    # 전략 정보 (어떤 전략으로 예측했는지)
+    strategy_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        ForeignKey("strategy_info.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Relationship: N:1 (GapPredictions : StrategyInfo)
+    strategy_info: Mapped[Optional["StrategyInfo"]] = relationship(
+        "StrategyInfo",
+        back_populates="gap_predictions",
+    )
+
+    # =====================================================
+    # 입력 데이터
+    # =====================================================
+    # 갭 상승률 (%)
+    gap_rate: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    # 당일 시가
+    stock_open: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    # =====================================================
+    # 예측 결과
+    # =====================================================
+    # 상승 확률 (0~1)
+    prob_up: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    # 하락 확률 (0~1)
+    prob_down: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    # 예측 방향 (0:하락, 1:상승)
+    predicted_direction: Mapped[int] = mapped_column(
+        nullable=False,
+    )
+
+    # 기대 수익률 (%)
+    expected_return: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    # 상승 시 예상 수익률 (%)
+    return_if_up: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    # 하락 시 예상 손실률 (%)
+    return_if_down: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    # =====================================================
+    # 고가 예측 (선택)
+    # =====================================================
+    # 상승 시 최대 수익률 (%)
+    max_return_if_up: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # 익절 목표 수익률 (%)
+    take_profit_target: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # =====================================================
+    # 매매 신호
+    # =====================================================
+    # 매매 신호 (BUY/HOLD/SELL)
+    signal: Mapped[SignalType] = mapped_column(
+        Enum(SignalType),
+        nullable=False,
+        default=SignalType.HOLD,
+    )
+
+    # =====================================================
+    # 메타 정보
+    # =====================================================
+    # 모델 버전
+    model_version: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default='v1.0',
+    )
+
+    # 신뢰도 (HIGH/MEDIUM/LOW)
+    confidence: Mapped[Optional[ConfidenceLevel]] = mapped_column(
+        Enum(ConfidenceLevel),
+        nullable=True,
+    )
+
+    # =====================================================
+    # 실제 결과 (Airflow에서 장 마감 후 업데이트)
+    # =====================================================
+    # 실제 종가
+    actual_close: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # 실제 고가
+    actual_high: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # 실제 저가
+    actual_low: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # =====================================================
+    # 예측 vs 실제 비교 (Airflow에서 계산하여 업데이트)
+    # =====================================================
+    # 실제 종가 수익률 (%) = (actual_close - stock_open) / stock_open * 100
+    actual_return: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # 종가 예측 차이 = expected_return - actual_return
+    return_diff: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # 실제 고가 수익률 (%) = (actual_high - stock_open) / stock_open * 100
+    actual_max_return: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # 고가 예측 차이 = max_return_if_up - actual_max_return
+    max_return_diff: Mapped[Optional[float]] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    # 예측 방향 정확도 (1: 맞음, 0: 틀림)
+    direction_correct: Mapped[Optional[int]] = mapped_column(
+        nullable=True,
+    )
+
+    # =====================================================
+    # 제약 조건 및 인덱스
+    # =====================================================
+    __table_args__ = (
+        # Unique: 종목 + 날짜 조합은 유일 (같은 날 같은 종목 중복 예측 방지)
+        UniqueConstraint('stock_code', 'prediction_date', name='uq_gap_predictions_stock_date'),
+
+        # Index: 조회 성능 최적화
+        Index('idx_gap_predictions_stock_code', 'stock_code'),
+        Index('idx_gap_predictions_date', 'prediction_date'),
+        Index('idx_gap_predictions_signal', 'signal'),
+    )
+
+    def __repr__(self) -> str:
+        return f"<GapPredictions(stock_code='{self.stock_code}', date={self.prediction_date}, signal={self.signal})>"
 
 class UserStrategy(Base, TimestampMixin):
     __tablename__ = "user_strategy"
@@ -296,20 +557,6 @@ class DailyStrategyStock(Base, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
-
-class OrderStatus(str, enum.Enum):
-    """주문 상태"""
-    ORDERED = "ordered"  # 주문 접수
-    PARTIALLY_EXECUTED = "partially_executed"  # 부분 체결
-    EXECUTED = "executed"  # 전량 체결
-    CANCELLED = "cancelled"  # 취소
-    REJECTED = "rejected"  # 거부
-
-
-class OrderType(str, enum.Enum):
-    """주문 유형"""
-    BUY = "BUY"
-    SELL = "SELL"
 
 
 class Order(Base, TimestampMixin):
