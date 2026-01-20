@@ -733,3 +733,78 @@ class OrderExecution(Base, TimestampMixin):
         "Order",
         back_populates="executions",
     )
+
+class HourCandleData(Base, TimestampMixin):
+    """1시간봉 캔들 데이터"""
+
+    __tablename__ = "hour_candle_data"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    # 종목 코드
+    stock_code: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+    )
+
+    # 캔들 날짜
+    candle_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+    )
+
+    # 캔들 시간 (9, 10, 11, 12, 13, 14, 15)
+    hour: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    # OHLCV 데이터
+    open: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    high: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    low: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    close: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    volume: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        default=0,
+    )
+
+    # 체결 건수
+    trade_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    __table_args__ = (
+        # Unique: 종목 + 날짜 + 시간 조합은 유일
+        UniqueConstraint('stock_code', 'candle_date', 'hour', name='uq_hour_candle_stock_date_hour'),
+        # Index: 조회 성능 최적화
+        Index('idx_hour_candle_stock_code', 'stock_code'),
+        Index('idx_hour_candle_date', 'candle_date'),
+        Index('idx_hour_candle_stock_date', 'stock_code', 'candle_date'),
+    )
+
+    def __repr__(self) -> str:
+        return f"<HourCandleData(stock_code='{self.stock_code}', date={self.candle_date}, hour={self.hour})>"
