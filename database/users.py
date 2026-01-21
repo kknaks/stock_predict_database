@@ -103,7 +103,7 @@ class Accounts(Base, TimestampMixin):
 
     account_name: Mapped[str] = mapped_column(
         String(50),
-        nullable=False,
+        nullable=True,
         default="test",
     )
 
