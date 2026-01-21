@@ -20,6 +20,11 @@ class UserRole(str, enum.Enum):
     USER = "user"      # 일반 사용자: 제한된 권한
     MOCK = "mock"      # 모의 사용자: 모의 거래
 
+class AccountType(str, enum.Enum):
+    """계좌 유형"""
+    REAL = "real"      # 한국투자증권
+    PAPER = "paper"      # 모의 거래
+    MOCK = "mock"      # 테스트 거래
 class Users(Base, TimestampMixin):
     """사용자 테이블"""
     
@@ -94,6 +99,17 @@ class Accounts(Base, TimestampMixin):
         BigInteger,
         ForeignKey("users.uid", ondelete="CASCADE"),
         nullable=False,
+    )
+
+    account_name: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+
+    account_type: Mapped[AccountType] = mapped_column(
+        Enum(AccountType),
+        nullable=False,
+        default=AccountType.REAL,
     )
 
     hts_id: Mapped[str] = mapped_column(
