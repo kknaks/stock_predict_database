@@ -508,7 +508,7 @@ class DailyStrategyStock(Base, TimestampMixin):
         nullable=True,
     )
 
-    sell_price: Mapped[Optional[float]] = mapped_column(
+    target_sell_price: Mapped[Optional[float]] = mapped_column(
         Float,
         nullable=True,
     )
