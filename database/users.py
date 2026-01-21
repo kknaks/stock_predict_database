@@ -104,6 +104,7 @@ class Accounts(Base, TimestampMixin):
     account_name: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
+        default="test",
     )
 
     account_type: Mapped[AccountType] = mapped_column(
