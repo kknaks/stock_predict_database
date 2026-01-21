@@ -396,6 +396,12 @@ class UserStrategy(Base, TimestampMixin):
         back_populates="user_strategy",
     )
 
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=True,
+        default=False,
+    )
+
     strategy_weight_type: Mapped[Optional["StrategyWeightType"]] = relationship(
         "StrategyWeightType",
         back_populates="user_strategies",
