@@ -71,12 +71,6 @@ class Users(Base, TimestampMixin):
         back_populates="user",
         cascade="all, delete-orphan",
     )
-
-    user_strategy: Mapped[List["UserStrategy"]] = relationship(
-        "UserStrategy",
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
     
     def __repr__(self) -> str:
         return f"<User(uid={self.uid}, nickname='{self.nickname}')>"
@@ -159,7 +153,14 @@ class Accounts(Base, TimestampMixin):
         "Users",
         back_populates="accounts",
     )
-    
+
+    # 관계: 계좌 1개 → 전략 여러개
+    user_strategies: Mapped[List["UserStrategy"]] = relationship(
+        "UserStrategy",
+        back_populates="account",
+        cascade="all, delete-orphan",
+    )
+
     def is_token_valid(self) -> bool:
         """토큰이 유효한지 확인 (만료 5분 전까지 유효)"""
         if not self.kis_access_token or not self.kis_token_expired_at:

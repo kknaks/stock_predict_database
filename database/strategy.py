@@ -337,9 +337,9 @@ class UserStrategy(Base, TimestampMixin):
         autoincrement=True,
     )
 
-    user_id: Mapped[int] = mapped_column(
+    account_id: Mapped[int] = mapped_column(
         BigInteger,
-        ForeignKey("users.uid"),
+        ForeignKey("stock_accounts.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -391,9 +391,9 @@ class UserStrategy(Base, TimestampMixin):
         uselist=False,
     )
 
-    user: Mapped["Users"] = relationship(
-        "Users",
-        back_populates="user_strategy",
+    account: Mapped["Accounts"] = relationship(
+        "Accounts",
+        back_populates="user_strategies",
     )
 
     is_deleted: Mapped[bool] = mapped_column(
