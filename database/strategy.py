@@ -74,7 +74,6 @@ class StrategyInfo(Base, TimestampMixin):
     gap_predictions: Mapped[List["GapPredictions"]] = relationship(
         "GapPredictions",
         back_populates="strategy_info",
-        cascade="all, delete-orphan",
     )
 
 class StrategyWeightType(Base, TimestampMixin):
