@@ -154,7 +154,7 @@ class GapPredictions(Base, TimestampMixin):
     # 전략 정보 (어떤 전략으로 예측했는지)
     strategy_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
-        ForeignKey("strategy_info.id", ondelete="SET NULL"),
+        ForeignKey("strategy_info.id"),
         nullable=True,
     )
 
