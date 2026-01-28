@@ -8,7 +8,7 @@ import enum
 from datetime import datetime
 from typing import Optional, List
 
-from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Numeric, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
@@ -124,6 +124,12 @@ class Accounts(Base, TimestampMixin):
         Numeric(20, 2),  # 소수점 2자리까지
         nullable=False,
         default=0,
+    )
+
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
     )
     
     # 한국투자증권 API 키

@@ -1,8 +1,8 @@
 import enum
-from datetime import datetime, date
+from datetime import datetime, date, time
 from typing import Optional, List
 
-from sqlalchemy import BigInteger, DateTime, Date, Enum, ForeignKey, Float, String, Text, Boolean, Integer, UniqueConstraint, Index
+from sqlalchemy import BigInteger, DateTime, Date, Time, Enum, ForeignKey, Float, String, Text, Boolean, Integer, UniqueConstraint, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
@@ -154,7 +154,7 @@ class GapPredictions(Base, TimestampMixin):
     # 전략 정보 (어떤 전략으로 예측했는지)
     strategy_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
-        ForeignKey("strategy_info.id", ondelete="SET NULL"),
+        ForeignKey("strategy_info.id"),
         nullable=True,
     )
 
@@ -813,3 +813,91 @@ class HourCandleData(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<HourCandleData(stock_code='{self.stock_code}', date={self.candle_date}, hour={self.hour})>"
+
+
+class MinuteCandleData(Base, TimestampMixin):
+    """분봉 캔들 데이터 (1분, 3분, 5분, 10분, 15분, 30분 등)"""
+
+    __tablename__ = "minute_candle_data"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    # 종목 코드
+    stock_code: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+    )
+
+    # 캔들 날짜
+    candle_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+    )
+
+    # 캔들 시간 (HH:MM:SS 형태로 저장, 예: 09:01:00, 09:05:00)
+    candle_time: Mapped[time] = mapped_column(
+        Time,
+        nullable=False,
+    )
+
+    # 분봉 간격 (1, 3, 5, 10, 15, 30 등)
+    minute_interval: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=1,
+    )
+
+    # OHLCV 데이터
+    open: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    high: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    low: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    close: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    volume: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        default=0,
+    )
+
+    # 체결 건수
+    trade_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    __table_args__ = (
+        # Unique: 종목 + 날짜 + 시간 + 분봉간격 조합은 유일
+        UniqueConstraint(
+            'stock_code', 'candle_date', 'candle_time', 'minute_interval',
+            name='uq_minute_candle_stock_date_time_interval'
+        ),
+        # Index: 조회 성능 최적화
+        Index('idx_minute_candle_stock_code', 'stock_code'),
+        Index('idx_minute_candle_date', 'candle_date'),
+        Index('idx_minute_candle_interval', 'minute_interval'),
+        Index('idx_minute_candle_stock_date', 'stock_code', 'candle_date'),
+        Index('idx_minute_candle_stock_date_interval', 'stock_code', 'candle_date', 'minute_interval'),
+    )
+
+    def __repr__(self) -> str:
+        return f"<MinuteCandleData(stock_code='{self.stock_code}', date={self.candle_date}, time={self.candle_time}, interval={self.minute_interval}m)>"
