@@ -11,7 +11,7 @@ import enum
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import BigInteger, Date, Enum, Float, ForeignKey, Index, Numeric, String, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Date, Enum, Float, ForeignKey, Index, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
@@ -66,6 +66,16 @@ class StockMetadata(Base, TimestampMixin):
     # 시가총액 (원)
     market_cap: Mapped[Optional[float]] = mapped_column(
         Numeric(20, 2),
+        nullable=True,
+    )
+
+    is_nxt_tradable: Mapped[Optional[bool]] = mapped_column(
+        Boolean,
+        nullable=True,
+    )
+
+    is_nxt_stopped: Mapped[Optional[bool]] = mapped_column(
+        Boolean,
         nullable=True,
     )
 
