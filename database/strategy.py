@@ -145,6 +145,12 @@ class GapPredictions(Base, TimestampMixin):
         nullable=True,
     )
 
+    is_nxt: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=True,
+        default=False,
+    )
+
     # 예측 대상 날짜
     prediction_date: Mapped[date] = mapped_column(
         Date,
