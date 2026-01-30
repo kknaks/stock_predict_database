@@ -35,6 +35,12 @@ if config.config_file_name is not None:
 from database.base import Base
 from database.users import Users
 from database.stocks import StockMetadata, StockPrices, MarketIndices
+from database.strategy import (
+    StrategyInfo, StrategyWeightType, GapPredictions, UserStrategy,
+    DailyStrategy, DailyStrategyStock, Order, OrderExecution,
+    HourCandleData, MinuteCandleData,
+)
+from database.model_registry import ModelRegistry
 
 target_metadata = Base.metadata
 
