@@ -17,6 +17,18 @@ rpk topic create kis_websocket_commands \
   --partitions 3 \
   --replicas 3
 
+# model_retrain_command 토픽 생성 (재학습 트리거)
+rpk topic create model_retrain_command \
+  --brokers redpanda-0:9092 \
+  --partitions 1 \
+  --replicas 3
+
+# model_retrain_result 토픽 생성 (재학습 결과)
+rpk topic create model_retrain_result \
+  --brokers redpanda-0:9092 \
+  --partitions 1 \
+  --replicas 3
+
 echo "Topics created successfully!"
 echo "Current topics:"
 rpk topic list --brokers redpanda-0:9092
