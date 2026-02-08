@@ -29,6 +29,12 @@ rpk topic create model_retrain_result \
   --partitions 1 \
   --replicas 3
 
+# boliger_prediction_trigger 토픽 생성 (Boliger 모델 예측 트리거)
+rpk topic create boliger_prediction_trigger \
+  --brokers redpanda-0:9092 \
+  --partitions 1 \
+  --replicas 3
+
 echo "Topics created successfully!"
 echo "Current topics:"
 rpk topic list --brokers redpanda-0:9092
